@@ -11,6 +11,9 @@ module.exports = (function() {
     var argv = yargs.argv;
 
     var files = argv.files.split(',');
+    if ('ids' in argv) {
+        var ids = typeof(argv.ids) === 'string' ? argv.ids.split(',') : [argv.ids + ''];
+    }
 
     Q.allSettled(files.map(function(file) {
         return CsvReader.read(file);
@@ -18,6 +21,12 @@ module.exports = (function() {
         var releases = results.map(function(result) {
             return result.value;
         }).flatten();
+
+        if (ids) {
+            releases = releases.filter(function(release) {
+                return !!~ids.indexOf(release.release_id);
+            });
+        }
 
         function addToWantlist(release, next) {
             Discogs.addToWantlist(release.release_id).then(next);
